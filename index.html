@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar de Eventos — Synvia</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --green: #86bd2c;
+    --green-dark: #1a8f41;
+    --green-light: #f0f7e0;
+    --green-label: #1a8f41;
+    --black: #22201f;
+    --dark-green-text: #22201f;
+    --gray: #6b7280;
+    --gray-light: #f9f9f9;
+    --border: #e6e8e7;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Montserrat', sans-serif; background: var(--gray-light); color: var(--dark-green-text); min-height: 100vh; }
+
+  /* LOGIN */
+  #loginScreen { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .login-box { background: #1c1b1a; border: 1px solid #333230; border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 400px; text-align: center; }
+  .login-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 32px; }
+  .login-logo svg { width: 36px; height: 36px; }
+  .login-logo span { font-size: 28px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
+  .login-title { font-size: 13px; color: var(--green); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 6px; }
+  .login-subtitle { font-size: 13px; color: #666; margin-bottom: 28px; }
+  .login-input { width: 100%; padding: 14px 16px; background: #2a2825; border: 1.5px solid #3a3835; border-radius: 10px; color: var(--white); font-size: 15px; font-family: 'Manrope', sans-serif; outline: none; transition: border-color 0.2s; margin-bottom: 12px; text-align: center; letter-spacing: 2px; }
+  .login-input:focus { border-color: var(--green); }
+  .login-input::placeholder { letter-spacing: 0; color: #555; }
+  .login-btn { width: 100%; padding: 14px; background: var(--green); color: var(--black); border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .login-btn:hover { background: #4aea8a; }
+  .login-error { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; }
+
+  /* APP */
+  #app { display: none; }
+
+  /* HEADER */
+  header { background: var(--black); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+  .logo svg { width: 26px; height: 26px; }
+  .logo span { font-size: 20px; font-weight: 700; color: var(--white); letter-spacing: -0.3px; }
+  .header-divider { width: 1px; height: 20px; background: #3a3835; }
+  .header-title { font-size: 13px; color: #888; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .header-date { font-size: 12px; color: #555; }
+  .header-badge { background: var(--green); color: var(--black); padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+  .logout-btn { background: none; border: 1px solid #3a3835; color: #888; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-family: 'Manrope', sans-serif; cursor: pointer; transition: all 0.15s; }
+  .logout-btn:hover { border-color: #555; color: #ccc; }
+
+  /* HERO */
+  .hero { background: var(--black); padding: 28px 24px 24px; border-bottom: 1px solid #1a1a1a; }
+  .hero-label { font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .hero h1 { font-size: 26px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
+  .hero p { font-size: 13px; color: #666; margin-top: 4px; }
+  .hero-stats { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .hero-stat { background: #1c1b1a; border: 1px solid #333230; border-radius: 10px; padding: 12px 18px; text-align: center; min-width: 80px; }
+  .hero-stat .num { font-size: 24px; font-weight: 700; color: var(--green); line-height: 1; }
+  .hero-stat .lbl { font-size: 10px; color: #555; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* LEGEND + CONTROLS */
+  .legend-bar { background: var(--white); padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .controls { background: var(--white); padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .controls label { font-size: 11px; color: var(--gray); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+  .chip { padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--border); background: var(--white); cursor: pointer; transition: all 0.15s; color: #374151; }
+  .chip:hover { border-color: var(--green); color: var(--green-label); }
+  .chip.active { background: var(--black); color: var(--white); border-color: var(--black); }
+  .chip.cat-clinical.active { background: #1d4ed8; border-color: #1d4ed8; }
+  .chip.cat-regulatory.active { background: #92400e; border-color: #92400e; }
+  .chip.cat-fair.active { background: #065f46; border-color: #065f46; }
+  .chip.cat-latam.active { background: #5b21b6; border-color: #5b21b6; }
+  .chip.cat-gcc.active { background: #155e75; border-color: #155e75; }
+  .chip.cat-industry.active { background: #9d174d; border-color: #9d174d; }
+  .toggle-past { margin-left: auto; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--border); background: var(--white); cursor: pointer; color: var(--gray); transition: all 0.15s; white-space: nowrap; }
+  .toggle-past:hover { border-color: var(--gray); }
+  .toggle-past.active { background: var(--gray); color: var(--white); border-color: var(--gray); }
+
+  /* EVENTS */
+  .events-container { padding: 20px; }
+  .month-group { margin-bottom: 28px; }
+  .month-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gray); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .month-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .event-card { background: var(--white); border-radius: 12px; padding: 16px 18px; margin-bottom: 8px; border-left: 4px solid var(--border); display: flex; gap: 16px; align-items: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: box-shadow 0.15s, transform 0.15s; position: relative; overflow: hidden; }
+  .event-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .event-card.past { opacity: 0.45; }
+  .event-card.soon { background: #f0fdf4 !important; }
+  .event-card.cat-clinical { border-left-color: #3b82f6; }
+  .event-card.cat-regulatory { border-left-color: #f59e0b; }
+  .event-card.cat-fair { border-left-color: #10b981; }
+  .event-card.cat-latam { border-left-color: #8b5cf6; }
+  .event-card.cat-gcc { border-left-color: #06b6d4; }
+  .event-card.cat-industry { border-left-color: #ec4899; }
+  .event-card.soon.cat-clinical, .event-card.soon.cat-regulatory, .event-card.soon.cat-fair, .event-card.soon.cat-latam, .event-card.soon.cat-gcc, .event-card.soon.cat-industry { border-left-color: var(--green); }
+  .new-badge { position: absolute; top: 12px; right: 14px; background: var(--green); color: var(--black); font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .event-date { min-width: 52px; text-align: center; background: var(--gray-light); border-radius: 10px; padding: 10px 8px; flex-shrink: 0; }
+  .event-date .day { font-size: 22px; font-weight: 800; color: var(--dark-green-text); line-height: 1; }
+  .event-date .mo { font-size: 10px; text-transform: uppercase; color: var(--gray); font-weight: 700; margin-top: 2px; }
+  .event-body { flex: 1; min-width: 0; }
+  .event-title { font-size: 14px; font-weight: 700; color: var(--dark-green-text); line-height: 1.3; }
+  .event-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; align-items: center; }
+  .meta-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--gray); }
+  .meta-item svg { width: 11px; height: 11px; flex-shrink: 0; }
+  .tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .tag-clinical { background: #dbeafe; color: #1d4ed8; }
+  .tag-regulatory { background: #fef3c7; color: #92400e; }
+  .tag-fair { background: #d1fae5; color: #065f46; }
+  .tag-latam { background: #ede9fe; color: #5b21b6; }
+  .tag-gcc { background: #cffafe; color: #155e75; }
+  .tag-industry { background: #fce7f3; color: #9d174d; }
+  .tag-region { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; background: var(--gray-light); color: var(--gray); }
+  .pill-soon { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--green); color: var(--black); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+  .pill-past { font-size: 10px; padding: 2px 8px; border-radius: 99px; background: var(--gray-light); color: #9ca3af; }
+  .event-desc { margin-top: 5px; font-size: 12px; color: var(--gray); line-height: 1.5; }
+  .no-results { text-align: center; padding: 48px 20px; color: var(--gray); }
+
+
+  .event-link { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--green-label); text-decoration: none; padding: 1px 7px; border: 1px solid var(--green-label); border-radius: 4px; transition: all 0.15s; margin-left: 2px; }
+  .event-link:hover { background: var(--green-label); color: white; }
+
+  .search-bar { background: var(--white); padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+  .search-input { flex: 1; padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Manrope', sans-serif; color: var(--dark-green-text); background: var(--gray-light); outline: none; transition: border-color 0.2s; }
+  .search-input:focus { border-color: var(--green); }
+  .search-input::placeholder { color: var(--gray); }
+  .btn-cal { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--green); color: var(--green-label); background: none; cursor: pointer; transition: all 0.15s; font-family: 'Manrope', sans-serif; }
+  .btn-cal:hover { background: var(--green-light); }
+  .btn-star { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); color: var(--gray); background: none; cursor: pointer; transition: all 0.15s; font-family: 'Manrope', sans-serif; }
+  .btn-star:hover { border-color: #f59e0b; color: #92400e; }
+  .btn-star.active { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+  .toggle-fav { padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 500; border: 1.5px solid var(--border); background: var(--white); cursor: pointer; color: var(--gray); transition: all 0.15s; white-space: nowrap; font-family: 'Manrope', sans-serif; }
+  .toggle-fav:hover { border-color: #f59e0b; color: #92400e; }
+  .toggle-fav.active { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+  .event-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  /* FOOTER */
+  footer { background: var(--black); color: #444; padding: 20px 24px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  footer a { color: var(--green); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 4C10.268 4 4 10.268 4 18C4 22.18 5.86 25.92 8.8 28.48L12 22C10.76 20.84 10 19.22 10 17.4C10 13.76 12.96 10.8 16.6 10.8C17.48 10.8 18.32 10.98 19.08 11.3L22.56 5.32C21.14 4.48 19.62 4 18 4Z" fill="#86bd2c"/>
+        <path d="M28 8.8L24.6 15C26.08 16.22 27 18.02 27 20C27 23.86 23.86 27 20 27C19.12 27 18.28 26.82 17.52 26.5L14 32.48C15.28 32.82 16.62 33 18 33C25.732 33 32 26.732 32 19C32 14.82 30.52 10.98 28 8.8Z" fill="#86bd2c" opacity="0.55"/>
+      </svg>
+      <span>synvia</span>
+    </div>
+    <div class="login-title">Radar de Eventos</div>
+    <div class="login-subtitle">Acesso restrito à equipe Synvia</div>
+    <input class="login-input" type="password" id="pwdInput" placeholder="Digite a senha" autocomplete="off"/>
+    <button class="login-btn" onclick="checkLogin()">Entrar</button>
+    <div class="login-error" id="loginError">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="header-left">
+      <a class="logo" href="https://synvia.com" target="_blank">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 4C10.268 4 4 10.268 4 18C4 22.18 5.86 25.92 8.8 28.48L12 22C10.76 20.84 10 19.22 10 17.4C10 13.76 12.96 10.8 16.6 10.8C17.48 10.8 18.32 10.98 19.08 11.3L22.56 5.32C21.14 4.48 19.62 4 18 4Z" fill="#86bd2c"/>
+          <path d="M28 8.8L24.6 15C26.08 16.22 27 18.02 27 20C27 23.86 23.86 27 20 27C19.12 27 18.28 26.82 17.52 26.5L14 32.48C15.28 32.82 16.62 33 18 33C25.732 33 32 26.732 32 19C32 14.82 30.52 10.98 28 8.8Z" fill="#86bd2c" opacity="0.55"/>
+        </svg>
+        <span>synvia</span>
+      </a>
+      <div class="header-divider"></div>
+      <span class="header-title">Radar de Eventos</span>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="headerDate"></span>
+      <span class="header-badge">INTERNO</span>
+      <button class="logout-btn" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-label">Inteligência de Mercado</div>
+    <h1>Radar de Eventos Global</h1>
+    <p>Congressos, feiras e reuniões regulatórias — Brasil, Américas, Europa, Ásia e GCC.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num" id="statTotal">—</div><div class="lbl">eventos</div></div>
+      <div class="hero-stat"><div class="num" id="statUpcoming">—</div><div class="lbl">próximos</div></div>
+      <div class="hero-stat"><div class="num" id="statSoon">—</div><div class="lbl">em 30 dias</div></div>
+      <div class="hero-stat"><div class="num" id="statCountries">—</div><div class="lbl">países</div></div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Pesquisa Clínica</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Regulatório</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Feira Farmacêutica</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>LATAM / Brasil</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div>GCC</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div><strong style="color:#9d174d">Indústria Pharma</strong> — onde seus clientes estão</div>
+  </div>
+
+
+  <div class="search-bar">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style="flex-shrink:0" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" stroke="var(--gray)" stroke-width="1.5"/><path d="M11 11L14 14" stroke="var(--gray)" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input class="search-input" type="text" id="searchInput" placeholder="Buscar evento, cidade ou organizador…" oninput="searchQuery=this.value;render()"/>
+  </div>
+
+  <div class="controls">
+    <label>Tipo:</label>
+    <div id="typeFilters" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="chip cat-all active" data-type="all">Todos</button>
+      <button class="chip cat-clinical" data-type="clinical">Pesquisa Clínica</button>
+      <button class="chip cat-regulatory" data-type="regulatory">Regulatório</button>
+      <button class="chip cat-fair" data-type="fair">Feiras</button>
+      <button class="chip cat-latam" data-type="latam">LATAM/Brasil</button>
+      <button class="chip cat-gcc" data-type="gcc">GCC</button>
+      <button class="chip cat-industry" data-type="industry">Indústria Pharma</button>
+    </div>
+    <div class="divider"></div>
+    <label>Região:</label>
+    <div id="regionFilters" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="chip active" data-region="all">Todas</button>
+      <button class="chip" data-region="brasil">🇧🇷 Brasil</button>
+      <button class="chip" data-region="latam">LATAM</button>
+      <button class="chip" data-region="norte">Am. Norte / Central</button>
+      <button class="chip" data-region="europa">Europa</button>
+      <button class="chip" data-region="asia">Ásia</button>
+      <button class="chip" data-region="gcc">GCC</button>
+    </div>
+    <button class="toggle-past" id="togglePast">Mostrar passados</button>
+    <button class="toggle-fav" id="toggleFav">☆ Meus eventos</button>
+  </div>
+
+  <div class="events-container" id="eventsContainer"></div>
+
+  <footer>
+    <span>© 2026 <a href="https://synvia.com" target="_blank">Synvia</a> — Uso interno.</span>
+    <span>ANVISA · FDA · EMA · ICH · DIA · CPHI · ACRP · RAPS · SOCRA · FCE · BIO · ASCO · ESMO · ISPE · FIP · TOPRA · DUPHAT · Sindusfarma · INTERFARMA</span>
+  </footer>
+</div>
+
+<script>
+const PWD='synvia2026', SK='synvia_radar_v1';
+function checkLogin(){
+  if(document.getElementById('pwdInput').value===PWD){
+    sessionStorage.setItem(SK,'1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('loginError').style.display='block';
+    document.getElementById('pwdInput').value='';
+    document.getElementById('pwdInput').focus();
+  }
+}
+function logout(){sessionStorage.removeItem(SK);location.reload();}
+document.getElementById('pwdInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkLogin();});
+if(sessionStorage.getItem(SK)){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+const _td=new Date();_td.setHours(0,0,0,0);const TODAY=_td;
+const EVENTS=[
+  {id:1,title:'SCOPE Summit 2026',start:'2026-02-02',end:'2026-02-05',location:'Orlando, FL — EUA',type:'clinical',region:'norte',org:'SCOPE / WCG',desc:'Premier event para líderes de operações clínicas. Estratégia de trials, inovação e descentralização.',mode:'presencial',isNew:false,url:'https://www.scopesummit.com/'},
+  {id:2,title:'Medicines for Europe — Regulatory Affairs Conference',start:'2026-02-26',end:'2026-02-27',location:'Amsterdam — Holanda',type:'regulatory',region:'europa',org:'Medicines for Europe',desc:'Conferência sobre regulatório de medicamentos genéricos e biossimilares na Europa.',mode:'presencial',isNew:false,url:'https://www.medicinesforeurope.com/events/'},
+  {id:3,title:'DIA Europe 2026',start:'2026-03-24',end:'2026-03-26',location:'Rotterdam — Holanda',type:'regulatory',region:'europa',org:'DIA',desc:'Única conferência onde praticamente todos os executivos sêniores da EMA participam.',mode:'presencial',isNew:false,url:'https://www.diaglobal.org/'},
+  {id:4,title:'MAGI Clinical Research Conference 2026',start:'2026-04-12',end:'2026-04-15',location:'Chicago, IL — EUA',type:'clinical',region:'norte',org:'WCG / MAGI',desc:'Foco em operações de trials, site management e conformidade regulatória.',mode:'presencial',isNew:false,url:'https://www.magiworld.org/'},
+  {id:5,title:'FDA — Generic Drugs Forum (GDF) 2026',start:'2026-04-22',end:'2026-04-23',location:'Silver Spring, MD — EUA',type:'regulatory',region:'norte',org:'FDA / CDER',desc:'Evento anual da FDA sobre desenvolvimento e aprovação de genéricos. Essencial para BE e registros.',mode:'híbrido',isNew:true,url:'https://www.fda.gov/drugs/news-events-human-drugs/generic-drug-related-meetings'},
+  {id:6,title:'ACRP Annual Conference 2026',start:'2026-04-24',end:'2026-04-27',location:'Orlando, FL — EUA',type:'clinical',region:'norte',org:'ACRP',desc:'Principal evento para CRAs, CRCs, PIs e líderes de sites de pesquisa clínica.',mode:'presencial',isNew:false,url:'https://acrpnet.org/events/'},
+  {id:7,title:'FIFARMA Annual Summit 2026',start:'2026-05-04',end:'2026-05-08',location:'Brasília — Brasil',type:'industry',region:'brasil',org:'FIFARMA / INTERFARMA / Sindusfarma',desc:'Summit da Federação Latino-Americana da Indústria Farmacêutica. Líderes da indústria de toda a América Latina.',mode:'presencial',isNew:true,url:'https://fifarma.org/'},
+  {id:8,title:'RAPS Euro Convergence 2026',start:'2026-05-05',end:'2026-05-08',location:'Lisboa — Portugal',type:'regulatory',region:'europa',org:'RAPS',desc:'Maior conferência de assuntos regulatórios da Europa. Legislação farmacêutica, dispositivos médicos e acesso.',mode:'presencial',isNew:false,url:'https://www.raps.org/events/'},
+  {id:9,title:'ANVISA — I Workshop de Inspeções em BPC',start:'2026-05-19',end:'2026-05-19',location:'Brasília — Brasil (híbrido)',type:'latam',region:'brasil',org:'ANVISA',desc:'Workshop sobre inspeções em Boas Práticas Clínicas com transmissão online.',mode:'híbrido',isNew:false,url:'https://www.gov.br/anvisa/pt-br'},
+  {id:10,title:'FDA — Vaccines Advisory Committee Meeting',start:'2026-05-28',end:'2026-05-28',location:'Silver Spring, MD — EUA',type:'regulatory',region:'norte',org:'FDA',desc:'Reunião pública do comitê consultivo de vacinas e produtos biológicos da FDA.',mode:'online',isNew:false,url:'https://www.fda.gov/advisory-committees'},
+  {id:11,title:'FCE Pharma 2026',start:'2026-06-01',end:'2026-06-03',location:'São Paulo Expo — Brasil',type:'industry',region:'brasil',org:'Informa Markets',desc:'🌟 A maior feira de negócios da indústria farmacêutica da América Latina. 650+ expositores, 25.000+ visitantes, >70% com poder de decisão.',mode:'presencial',isNew:true,url:'https://www.fcepharma.com.br/'},
+  {id:12,title:'CPHI Americas 2026',start:'2026-06-02',end:'2026-06-04',location:'Philadelphia, PA — EUA',type:'fair',region:'norte',org:'CPHI / Informa',desc:'Maior feira farmacêutica das Américas. Exposição e networking para toda a cadeia pharma.',mode:'presencial',isNew:false,url:'https://www.cphi.com/americas/'},
+  {id:13,title:'DIA Global Annual Meeting 2026',start:'2026-06-14',end:'2026-06-18',location:'Philadelphia, PA — EUA',type:'clinical',region:'norte',org:'DIA',desc:'+4.100 profissionais. Maior evento de desenvolvimento de produtos de saúde: regulatório, clínico e farmacovigilância.',mode:'presencial',isNew:false,url:'https://www.diaglobal.org/'},
+  {id:14,title:'Sindusfarma — Comitê de Farmacovigilância',start:'2026-06-15',end:'2026-06-15',location:'São Paulo — Brasil',type:'latam',region:'brasil',org:'Sindusfarma',desc:'Reunião do Comitê de Farmacovigilância. Exclusivo para associados.',mode:'presencial',isNew:false,url:'https://www.sindusfarma.org.br/'},
+  {id:15,title:'BIO International Convention 2026',start:'2026-06-22',end:'2026-06-25',location:'San Diego, CA — EUA',type:'industry',region:'norte',org:'BIO',desc:'+20.000 participantes. Maior evento de biotecnologia e ciências da vida do mundo. Delegação brasileira via ABIQUIFI.',mode:'presencial',isNew:true,url:'https://convention.bio.org/'},
+  {id:16,title:'CPHI & PMEC China 2026',start:'2026-06-16',end:'2026-06-18',location:'Xangai — China',type:'fair',region:'asia',org:'CPHI / Informa',desc:'Maior feira farmacêutica da Ásia. Equipamentos, APIs e serviços.',mode:'presencial',isNew:false,url:'https://www.cphi.com/china/'},
+  {id:17,title:'CPHI South East Asia 2026',start:'2026-07-08',end:'2026-07-10',location:'Bangkok — Tailândia',type:'fair',region:'asia',org:'CPHI / Informa',desc:'Feira farmacêutica do Sudeste Asiático.',mode:'presencial',isNew:false,url:'https://www.cphi.com/sea/'},
+  {id:18,title:'ACCESS Forum LATAM 2026',start:'2026-08-11',end:'2026-08-12',location:'Brasília — Brasil',type:'industry',region:'brasil',org:'ACCESS Forum / Sindusfarma / INTERFARMA',desc:'Fórum de acesso ao mercado da América Latina. Alta densidade de tomadores de decisão de labs e multinacionais pharma.',mode:'presencial',isNew:true,url:'https://accessforum.com.br/'},
+  {id:19,title:'Biosimilars LatAm — Brazil 2026',start:'2026-08-05',end:'2026-08-06',location:'São Paulo — Brasil',type:'latam',region:'brasil',org:'JackLeckerman',desc:'Fórum sobre biossimilares no Brasil: regulatório, acesso e estratégias comerciais.',mode:'presencial',isNew:false,url:'https://www.biosimilarslatam.com/'},
+  {id:20,title:'CPHI Korea 2026',start:'2026-08-25',end:'2026-08-27',location:'Seul — Coreia do Sul',type:'fair',region:'asia',org:'CPHI / Informa',desc:'Feira farmacêutica da Coreia do Sul.',mode:'presencial',isNew:false,url:'https://www.cphi.com/korea/'},
+  {id:21,title:'DIA India Annual Meeting 2026',start:'2026-09-11',end:'2026-09-12',location:'Mumbai — Índia',type:'clinical',region:'asia',org:'DIA',desc:'Meeting anual da DIA na Índia: regulatório e pesquisa clínica.',mode:'presencial',isNew:false,url:'https://www.diaglobal.org/'},
+  {id:22,title:'RAPS Convergence 2026',start:'2026-09-15',end:'2026-09-17',location:'Charlotte, NC — EUA',type:'regulatory',region:'norte',org:'RAPS',desc:'Principal conferência de assuntos regulatórios das Américas.',mode:'presencial',isNew:false,url:'https://www.raps.org/events/'},
+  {id:23,title:'DIA Singapore Annual Meeting 2026',start:'2026-09-16',end:'2026-09-17',location:'Singapura',type:'clinical',region:'asia',org:'DIA',desc:'Meeting anual da DIA em Singapura.',mode:'presencial',isNew:false,url:'https://www.diaglobal.org/'},
+  {id:24,title:'CPHI & PMEC Shenzhen 2026',start:'2026-09-16',end:'2026-09-18',location:'Shenzhen — China',type:'fair',region:'asia',org:'CPHI / Informa',desc:'Feira farmacêutica no sul da China.',mode:'presencial',isNew:false,url:'https://www.cphi.com/china/'},
+  {id:25,title:'SOCRA Annual Conference 2026',start:'2026-09-25',end:'2026-09-27',location:'Denver, CO — EUA',type:'clinical',region:'norte',org:'SOCRA',desc:'+1.000 profissionais de pesquisa clínica. Boas práticas e condução de trials.',mode:'presencial',isNew:false,url:'https://www.socra.org/events/'},
+  {id:26,title:'CPHI Milan 2026',start:'2026-10-06',end:'2026-10-08',location:'Milão — Itália',type:'fair',region:'europa',org:'CPHI / Informa',desc:'O maior evento farmacêutico do mundo. 50.000+ profissionais de toda a cadeia global.',mode:'presencial',isNew:false,url:'https://www.cphi.com/europe/'},
+  {id:27,title:'GCC Regulatory Affairs Pharma Summit 2026',start:'2026-06-22',end:'2026-06-23',location:'Mövenpick Grand Al Bustan — Dubai, Emirados Árabes',type:'gcc',region:'gcc',org:'PRA (Professionals Regulatory Affairs)',desc:'11ª edição do principal evento regulatório farmacêutico do GCC. 50+ especialistas, 400+ participantes. Cobre estratégia regulatória, eCTD, farmacovigilância, conformidade e política regional do GCC. Essencial para empresas com presença nos Emirados, Arábia Saudita e região.',mode:'presencial',isNew:false,url:'https://pra-me.com/events/'},
+  {id:28,title:'Pharmapack Asia 2026',start:'2026-11-03',end:'2026-11-04',location:'Singapura',type:'fair',region:'asia',org:'Informa',desc:'Embalagem e entrega de medicamentos na Ásia.',mode:'presencial',isNew:false,url:'https://www.pharmapackasia.com/'},
+  {id:29,title:'CPHI India 2026',start:'2026-11-23',end:'2026-11-25',location:'Nova Délhi — Índia',type:'fair',region:'asia',org:'CPHI / Informa',desc:'Feira farmacêutica da Índia: APIs, formulation e biotech.',mode:'presencial',isNew:false,url:'https://www.cphi.com/india/'},
+  {id:30,title:'PMEC India 2026',start:'2026-11-24',end:'2026-11-26',location:'Greater Noida — Índia',type:'fair',region:'asia',org:'CPHI / Informa',desc:'Equipamentos para manufatura farmacêutica.',mode:'presencial',isNew:false,url:'https://www.cphi.com/india/'},
+  {id:31,title:'CPHI Middle East 2026',start:'2026-12-14',end:'2026-12-16',location:'Riade — Arábia Saudita',type:'gcc',region:'gcc',org:'CPHI / Informa',desc:'Feira farmacêutica do Oriente Médio. Mercado GCC e MENA.',mode:'presencial',isNew:false,url:'https://www.cphi.com/middle-east/'},
+  {id:32,title:'Pharmapack Europe 2027',start:'2027-01-27',end:'2027-01-28',location:'Paris — França',type:'fair',region:'europa',org:'Informa',desc:'Maior evento europeu de embalagem farmacêutica.',mode:'presencial',isNew:false,url:'https://www.pharmapackeurope.com/'},
+  {id:33,title:'Congreso Internacional Industria Farmacéutica — Paraguay 2026',start:'2026-07-17',end:'2026-07-18',location:'Assunção — Paraguai',type:'industry',region:'latam',org:'Congreso Industria Farmacéutica',desc:'Congresso focado em qualidade, validação e regulações para a indústria farmacêutica da América do Sul. Profissionais de QA/QC, assuntos regulatórios e supply chain.',mode:'presencial',isNew:true,url:'https://congresoindustriafarmaceutica.com/'},
+  {id:34,title:'ASCO Annual Meeting 2026',start:'2026-05-29',end:'2026-06-02',location:'Chicago, IL — EUA',type:'clinical',region:'norte',org:'ASCO',desc:'+40.000 profissionais. O maior congresso de oncologia clínica do mundo. Dados de trials, aprovações recentes e tendências em oncologia. Alta frequência de sponsors buscando CROs.',mode:'presencial',isNew:true,url:'https://www.asco.org/meeting'},
+  {id:35,title:'ICH Assembly Meeting — Rio de Janeiro 2026',start:'2026-06-02',end:'2026-06-03',location:'Rio de Janeiro — Brasil',type:'regulatory',region:'brasil',org:'ICH (International Council for Harmonisation)',desc:'🌟 Reunião da Assembleia do ICH no Brasil — harmonização regulatória global de medicamentos. Evento raro em solo brasileiro. Oportunidade única de network com autoridades regulatórias mundiais (FDA, EMA, ANVISA).',mode:'presencial',isNew:true,url:'https://www.ich.org/'},
+  {id:36,title:'DUPHAT 2026 — Dubai Pharmaceuticals & Technologies',start:'2026-06-30',end:'2026-07-02',location:'Dubai World Trade Centre — Emirados Árabes',type:'gcc',region:'gcc',org:'DUPHAT',desc:'Premier conferência farmacêutica de Dubai. 32.000+ profissionais pharma do Oriente Médio e MENA. Cobre manufatura, tecnologias, regulatório e mercado GCC.',mode:'presencial',isNew:true,url:'https://www.duphat.ae/'},
+  {id:37,title:'FIP World Congress 2026',start:'2026-08-30',end:'2026-09-02',location:'Montreal — Canadá',type:'regulatory',region:'norte',org:'FIP (International Pharmaceutical Federation)',desc:'Congresso mundial de farmácia e ciências farmacêuticas. "One Health, One Pharmacy." Regulatório, prática clínica e pesquisa científica com perspectiva verdadeiramente global.',mode:'presencial',isNew:true,url:'https://www.fip.org/world-congress'},
+  {id:38,title:'ISPE Annual Meeting & Expo 2026',start:'2026-10-18',end:'2026-10-21',location:'National Harbor, MD — EUA',type:'regulatory',region:'norte',org:'ISPE (International Society for Pharmaceutical Engineering)',desc:'Principal evento de engenharia e manufatura farmacêutica. Qualificação, validação, GMP e biopharma manufacturing. Alta concentração de tomadores de decisão da indústria.',mode:'híbrido',isNew:true,url:'https://ispe.org/conferences/annual-meeting'},
+  {id:39,title:'TOPRA Symposium 2026',start:'2026-10-19',end:'2026-10-21',location:'Utrecht — Holanda',type:'regulatory',region:'europa',org:'TOPRA (Organisation for Professionals in Regulatory Affairs)',desc:'Premier conferência europeia de assuntos regulatórios. Streams especializados: Medicamentos Humanos, Dispositivos Médicos e Veterinária. Networking com reguladores europeus.',mode:'presencial',isNew:true,url:'https://www.topra.org/'},
+  {id:40,title:'ESMO Congress 2026',start:'2026-10-23',end:'2026-10-27',location:'Madrid — Espanha',type:'clinical',region:'europa',org:'ESMO (European Society for Medical Oncology)',desc:'Maior congresso de oncologia médica da Europa. Dados de trials, guidelines e inovação em tratamentos. Relevante para CROs com portfólio oncológico e sponsors europeus.',mode:'presencial',isNew:true,url:'https://www.esmo.org/'},
+  {id:41,title:'Bio-Europe 2026',start:'2026-11-09',end:'2026-11-11',location:'Colônia — Alemanha',type:'fair',region:'europa',org:'Informa Connect Life Sciences',desc:'8.000+ profissionais de biopharma. Principal evento europeu de parcerias em biotecnologia — partnering, licensing e M&A entre pharma, biotech e CROs.',mode:'presencial',isNew:true,url:'https://www.bioeurope.com/'},
+  {id:42,title:'Arab Health 2027 / World Health Expo Dubai',start:'2027-01-25',end:'2027-01-28',location:'Dubai Exhibition Centre — Emirados Árabes',type:'gcc',region:'gcc',org:'World Health Expo (WHX)',desc:'Maior evento de saúde e farma do Oriente Médio e África. 60.000+ visitantes. Legado de 50 anos do Arab Health — cobertura completa da cadeia de saúde do GCC e MENA.',mode:'presencial',isNew:true,url:'https://www.arabhealth.com/'},
+  {id:43,title:'DIA Latin America Annual Meeting 2026',start:'2026-09-09',end:'2026-09-11',location:'Hilton Mexico City Reforma — Ciudad de México, México',type:'latam',region:'latam',org:'DIA (Drug Information Association)',desc:'Meeting anual da DIA para América Latina e Caribe. Trilhas: Regulatório/Clínico, Farmacovigilância e Dispositivos Médicos. ANVISA no comitê do programa. Interpretação simultânea em inglês e português.',mode:'presencial',isNew:true,url:'https://www.diaglobal.org/en/conference-listing/meetings/2026/09/latin-america-annual-meeting'},
+  {id:48,title:'DIA Europe Annual Meeting 2027',start:'2027-03-16',end:'2027-03-18',location:'Basel — Suíça',type:'regulatory',region:'europa',org:'DIA (Drug Information Association)',desc:'Maior evento europeu de informação sobre medicamentos. Regulatório, farmacovigilância, aprovação de medicamentos e harmonização com EMA. Networking com reguladores europeus e globais.',mode:'presencial',isNew:true,url:'https://www.diaglobal.org/en/conference-listing'},
+  {id:49,title:'ALIFAR XLVII Asamblea Anual 2026 + Foro LATAM',start:'2026-06-01',end:'2026-06-04',location:'Santiago — Chile',type:'latam',region:'latam',org:'ALIFAR / ASILFA',desc:'XLVII Assembleia Anual da Associação Latino-Americana de Indústrias Farmacêuticas. Reúne autoridades, acadêmicos e gremios de 14 países da América Latina representando ~400 laboratórios. Foro Latinoamericano da Indústria Farmacêutica em 4 de junho. Sede: Chile (ASILFA). Prevê Declaração de Santiago 2026.',mode:'presencial',isNew:true,url:'https://alifar.org'},
+  {id:50,title:'IV Congreso Peruano de Farmacovigilância 2026',start:'2026-08-21',end:'2026-08-23',location:'Universidad ESAN — Lima, Peru',type:'regulatory',region:'latam',org:'SOPERFAR (Sociedad Peruana de Farmacovigilancia)',desc:'IV Congresso Peruano de Farmacovigilância organizado pela SOPERFAR. Reúne profissionais, reguladores e acadêmicos para discutir boas práticas de PV no Peru e na LATAM. Sediado na Universidade ESAN, Lima.',mode:'presencial',isNew:true,url:'https://www.facebook.com/SociedadPeruanadeFarmacovigilancia'},
+  {id:51,title:'ISoP Global Meeting 2026 — 25th Anniversary',start:'2026-09-22',end:'2026-09-25',location:'San José — Costa Rica',type:'regulatory',region:'latam',org:'ISoP (International Society of Pharmacovigilance)',desc:'25° Congresso Global de Farmacovigilância. Tema: "Ecosystems of Trust: Pharmacovigilance for a Healthier World." Principal evento mundial de PV — reguladores, indústria e acadêmicos de todos os continentes. Co-organizado pelo Colegio de Farmacéuticos de Costa Rica (COLFAR).',mode:'presencial',isNew:true,url:'https://www.isop2026costarica.org'},
+  {id:52,title:'ETIF 2026 — 13° Congreso para la Ciencia y Tecnología Farmacéutica',start:'2026-11-03',end:'2026-11-05',location:'Centro Costa Salguero — Buenos Aires, Argentina',type:'industry',region:'latam',org:'ETIF (Eventos y Tecnología para la Industria Farmacéutica)',desc:'Principal evento da indústria farmacêutica, biotecnológica, veterinária e cosmética da América do Sul. 25+ anos de história. Congresso Científico-Técnico + Exposição + Ronda de Negócios. Referência para decisões de investimento em equipamentos, tecnologia e serviços.',mode:'presencial',isNew:true,url:'https://www.etif.com.ar'},
+  {id:53,title:'Crossing Over LATAM BioExpo 2026',start:'2026-10-21',end:'2026-10-23',location:'Centro de Convenciones — Buenos Aires, Argentina',type:'industry',region:'latam',org:'Crossing Over LATAM / CONICET',desc:'Principal encontro regional de biotecnologia e biopharma da América Latina. Reúne líderes da indústria, startups, investidores e ecossistemas de inovação. Foco em biotech, biopharma e ciências da vida. Organizado com apoio do CONICET e parceiros regionais.',mode:'presencial',isNew:true,url:'https://crossingover-latam.com'},
+  {id:54,title:'World Drug Safety Congress Europe 2026',start:'2026-09-22',end:'2026-09-24',location:'RAI Amsterdam — Amsterdam, Holanda',type:'regulatory',region:'europa',org:'Terrapinn',desc:'Principal congresso europeu de segurança de medicamentos e farmacovigilância. Pre-congress workshops em 22 Set; Congresso Principal 23-24 Set. Reúne especialistas em PV, regulatórios e safety de toda a Europa e global. Foco em inovação digital, compliance e estratégias de farmacovigilância.',mode:'presencial',isNew:true,url:'https://www.terrapinn.com/conference/world-drug-safety-congress-europe/'},
+  {id:55,title:'ICPE 42nd Annual Meeting 2026 — Pharmacoepidemiology',start:'2026-08-29',end:'2026-09-02',location:'Allianz MiCo — Milão, Itália',type:'regulatory',region:'europa',org:'ISPE (International Society for Pharmacoepidemiology)',desc:'42ª Conferência Anual da Sociedade Internacional de Farmacoepidemiologia. Foco em Real World Evidence, estudos observacionais, segurança de medicamentos pós-comercialização e epidemiologia farmacêutica. Reguladores, academia e indústria de todo o mundo.',mode:'presencial',isNew:true,url:'https://www.pharmacoepi.org/annual-conference'},
+  {id:56,title:'Festival of Biologics 2026',start:'2026-10-13',end:'2026-10-15',location:'Messe Basel — Basel, Suíça',type:'fair',region:'europa',org:'Terrapinn',desc:'Maior festival europeu de biológicos. Reúne a comunidade de ciências da vida em torno de biológicos, biosimilares, terapias avançadas (ATMP) e imuno-oncologia. Conferência científica + exposição. Foco em desenvolvimento, manufatura e regulação de biológicos.',mode:'presencial',isNew:true,url:'https://www.terrapinn.com/conference/festival-of-biologics-europe/'},
+  {id:57,title:'Medica 2026 — World Forum for Medicine',start:'2026-11-16',end:'2026-11-19',location:'Messe Düsseldorf — Düsseldorf, Alemanha',type:'fair',region:'europa',org:'Messe Düsseldorf',desc:'Maior feira mundial de tecnologia médica e saúde. 5.000+ expositores de 66 países, 83.000+ visitantes. Principal plataforma global de negócios e inovação para a indústria médica — diagnóstico, terapêutica, IT em saúde e dispositivos médicos.',mode:'presencial',isNew:true,url:'https://www.medica-tradefair.com'},
+  {id:58,title:'PAGE 2026 — 34th Annual Meeting Population Approach Group Europe',start:'2026-06-02',end:'2026-06-05',location:'Valamar Lacroma Hotel — Dubrovnik, Croácia',type:'clinical',region:'europa',org:'PAGE (Population Approach Group Europe)',desc:'34ª Reunião Anual do Population Approach Group Europe. Foco em modelagem PK/PD de população, simulação de ensaios clínicos e análise de dados do mundo real. Fundamental para CROs que desenvolvem estudos de BE e precisam de análise de dados clínicos robusta. Reúne biostatísticos, modeladores PK/PD e farmacologistas clínicos de toda a Europa.',mode:'presencial',isNew:true,url:'https://www.page-meeting.org/'},
+  {id:59,title:'EBF 19th Open Symposium 2026',start:'2026-11-17',end:'2026-11-19',location:'Hyatt Regency Barcelona Tower — Barcelona, Espanha',type:'clinical',region:'europa',org:'EBF (European Bioanalysis Forum)',desc:'19º Simpósio Anual do European Bioanalysis Forum — principal evento europeu de bioanalítica. Foco em biomarcadores, validação de métodos analíticos, PK/PD e técnicas avançadas para estudos de bioequivalência. Indispensável para CROs que conduzem estudos de BE e precisam de standards regulatórios atualizados.',mode:'presencial',isNew:true,url:'https://meetings.e-b-f.eu/'},
+  {id:60,title:'BIO Asia–Taiwan 2026 International Conference & Exhibition',start:'2026-07-15',end:'2026-07-19',location:'TaiNEX — Taipei, Taiwan',type:'fair',region:'asia',org:'BIO / BIO Asia–Taiwan Organizing Committee',desc:'Principal evento de biotecnologia do APAC. Conferências científicas, exposição e sessões de partnering one-to-one. Reúne líderes da indústria, investidores e inovadores de todo o mundo com foco na Ásia. Relevante para CROs que buscam parceiros estratégicos na Ásia-Pacífico.',mode:'presencial',isNew:true,url:'https://bioasiataiwan.com'},
+  {id:61,title:'AAPS PharmSci 360 2026',start:'2026-10-25',end:'2026-10-28',location:'New Orleans, LA — EUA',type:'clinical',region:'norte',org:'AAPS (American Association of Pharmaceutical Scientists)',desc:'Principal conferência anual de ciências farmacêuticas dos EUA. Foco em biofarmácia, bioquivalência, drug delivery, PK/PD e ciências regulatórias. Evento central para pesquisadores de BE, com apresentações de ponta em dissolução, biodisponibilidade e métodos analíticos.',mode:'presencial',isNew:true,url:'https://www.aaps.org/pharmsci'},
+  {id:62,title:'Saudi International Pharma Expo 2026',start:'2026-10-12',end:'2026-10-14',location:'RICEC — Riyadh, Arábia Saudita',type:'gcc',region:'gcc',org:'Saudi International Pharma Expo Organizers',desc:'4ª edição da principal feira farmacêutica da Arábia Saudita. Plataforma única no Reino que reúne a indústria farmacêutica global. Cobre manufatura, APIs, biotecnologia, equipamentos e serviços farmacêuticos. Porta de entrada para o mercado saudita em plena expansão.',mode:'presencial',isNew:true,url:'https://saudipharmaexpo.com'},
+  {id:63,title:'Global Health Exhibition 2026',start:'2026-10-26',end:'2026-10-29',location:'Riyadh Exhibition and Convention Center — Riyadh, Arábia Saudita',type:'gcc',region:'gcc',org:'Informa Markets / Tahaluf',desc:'Maior evento de saúde e transformação digital em saúde do Oriente Médio. 131.000+ profissionais, 2.200+ marcas de 46 países, US$35.5B em negócios firmados. Foco em inovação clínica, saúde digital, IA na prática clínica e parcerias estratégicas. Inclui Leaders Summit, MedX Forum e Digital Health Forum.',mode:'presencial',isNew:true,url:'https://www.globalhealthsaudi.com'},
+  {id:64,title:'58º Congresso Brasileiro de Farmacologia e Terapêutica — SBFTE 2026',start:'2026-10-20',end:'2026-10-23',location:'Centro de Convenções — João Pessoa, PB',type:'clinical',region:'brasil',org:'SBFTE (Sociedade Brasileira de Farmacologia e Terapêutica Experimental)',desc:'58º Congresso Brasileiro de Farmacologia e Terapêutica Experimental, realizado conjuntamente com a XX Reunião Regional da FeSBE. Aborda farmacologia clínica, pré-clínica, PK/PD e terapêutica — diretamente relevante para pesquisa de BE e desenvolvimento de medicamentos.',mode:'presencial',isNew:true,url:'https://www.sbfte.org.br'},
+  {id:65,title:'IV Congresso Brasileiro de Ciências Farmacêuticas — CFF 2026',start:'2026-11-11',end:'2026-11-13',location:'Hangar Centro de Convenções — Belém, PA',type:'industry',region:'brasil',org:'CFF (Conselho Federal de Farmácia)',desc:'O maior congresso farmacêutico do Brasil. Reúne farmacêuticos de todas as áreas de atuação: clínica, hospitalar, regulatório, pesquisa e industrial. Conferências, painéis de debate, minicursos e apresentações científicas. Essencial para networking com profissionais da cadeia farmacêutica brasileira.',mode:'presencial',isNew:true,url:'https://congressocff.com.br'},
+  {id:66,title:'CRS Annual Meeting 2026 — Controlled Release Society',start:'2026-07-06',end:'2026-07-09',location:'Lisboa — Portugal',type:'clinical',region:'europa',org:'CRS (Controlled Release Society)',desc:'Maior congresso global de drug delivery e liberação controlada. Reúne formuladores, cientistas, reguladores e CROs especializados em bioavailability, biofarmácia e tecnologias de liberação. Diretamente relevante para estudos de BE e desenvolvimento de formas farmacêuticas.',mode:'presencial',isNew:true,url:'https://www.controlledrelease.org/crs-annual-meeting'},
+];
+
+let activeType='all',activeRegion='all',showPast=false,showFavOnly=false,searchQuery='';
+const FAV_KEY='synvia_radar_favs_v1';
+function getFavs(){try{return JSON.parse(localStorage.getItem(FAV_KEY)||'[]');}catch{return[];}}
+function toggleFav(id){let f=getFavs();if(f.includes(id)){f=f.filter(x=>x!==id);}else{f.push(id);}localStorage.setItem(FAV_KEY,JSON.stringify(f));render();}
+function addToCalendar(id){const ev=EVENTS.find(e=>e.id===id);if(!ev)return;const pad=n=>String(n).padStart(2,'0');const fmt=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;const ds=parseDate(ev.start);const de=parseDate(ev.end);de.setDate(de.getDate()+1);const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Synvia Radar//PT','BEGIN:VEVENT',`DTSTART;VALUE=DATE:${fmt(ds)}`,`DTEND;VALUE=DATE:${fmt(de)}`,`SUMMARY:${ev.title}`,`LOCATION:${ev.location}`,`DESCRIPTION:${ev.org} | ${ev.mode} | ${ev.url||''}`,`URL:${ev.url||''}`, 'END:VEVENT','END:VCALENDAR'].join('\r\n');const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=ev.title.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'.ics';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
+function parseDate(s){return new Date(s+'T00:00:00');}
+function daysDiff(d){return Math.round((parseDate(d)-TODAY)/86400000);}
+function isPast(ev){return parseDate(ev.end)<TODAY;}
+function isSoon(ev){const d=daysDiff(ev.start);return d>=0&&d<=30;}
+function monShort(s){return parseDate(s).toLocaleDateString('pt-BR',{month:'short'}).replace('.','').toUpperCase();}
+function monthKey(s){const d=parseDate(s);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
+function monthLabel(k){const[y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());}
+function formatDate(s){return parseDate(s).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).replace('.','')}
+const TL={clinical:'Pesquisa Clínica',regulatory:'Regulatório',fair:'Feira',latam:'LATAM / Brasil',gcc:'GCC',industry:'Indústria Pharma'};
+const RL={brasil:'🇧🇷 Brasil',latam:'LATAM',norte:'Am. Norte / Central',europa:'Europa',asia:'Ásia',gcc:'GCC'};
+const TC={clinical:'tag-clinical',regulatory:'tag-regulatory',fair:'tag-fair',latam:'tag-latam',gcc:'tag-gcc',industry:'tag-industry'};
+
+function filteredEvents(){
+  const favs=getFavs();
+  const q=searchQuery.trim().toLowerCase();
+  return EVENTS.filter(ev=>{
+    if(!showPast&&isPast(ev))return false;
+    if(activeType!=='all'&&ev.type!==activeType)return false;
+    if(activeRegion!=='all'&&ev.region!==activeRegion)return false;
+    if(showFavOnly&&!favs.includes(ev.id))return false;
+    if(q&&!ev.title.toLowerCase().includes(q)&&!ev.location.toLowerCase().includes(q)&&!ev.org.toLowerCase().includes(q)&&!ev.desc.toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>parseDate(a.start)-parseDate(b.start));
+}
+
+function render(){
+  const evs=filteredEvents();
+  const allF=EVENTS.filter(ev=>parseDate(ev.end)>=TODAY);
+  document.getElementById('statTotal').textContent=evs.length;
+  document.getElementById('statUpcoming').textContent=allF.length;
+  document.getElementById('statSoon').textContent=allF.filter(ev=>isSoon(ev)).length;
+  document.getElementById('statCountries').textContent=[...new Set(EVENTS.map(ev=>ev.location.split('—').pop().trim()))].length;
+  if(!evs.length){document.getElementById('eventsContainer').innerHTML='<div class="no-results"><p>Nenhum evento encontrado. Ajuste os filtros.</p></div>';return;}
+  const groups={};
+  evs.forEach(ev=>{const k=monthKey(ev.start);if(!groups[k])groups[k]=[];groups[k].push(ev);});
+  let html='';
+  Object.entries(groups).sort().forEach(([key,list])=>{
+    html+=`<div class="month-group"><div class="month-label">${monthLabel(key)}</div>`;
+    const _favs=getFavs();
+    list.forEach(ev=>{
+      const isFav=_favs.includes(ev.id);
+      const past=isPast(ev),soon=isSoon(ev),d=daysDiff(ev.start);
+      const end=ev.start!==ev.end?` – ${formatDate(ev.end)}`:'';
+      const icon=ev.mode==='online'?'💻':ev.mode==='híbrido'?'🔀':'📍';
+      let pill='';
+      if(past)pill='<span class="pill-past">Realizado</span>';
+      else if(d===0)pill='<span class="pill-soon">HOJE</span>';
+      else if(d<=7)pill=`<span class="pill-soon">em ${d} dias</span>`;
+      else if(soon)pill=`<span class="pill-soon">em ${d} dias</span>`;
+      html+=`<div class="event-card ${past?'past':''} ${soon?'soon':''} cat-${ev.type}">
+        ${ev.isNew?'<span class="new-badge">novo</span>':''}
+        <div class="event-date"><div class="day">${parseDate(ev.start).getDate()}</div><div class="mo">${monShort(ev.start)}</div></div>
+        <div class="event-body">
+          <div class="event-title">${ev.title}</div>
+          <div class="event-meta"><span class="tag ${TC[ev.type]}">${TL[ev.type]}</span><span class="tag-region">${RL[ev.region]||ev.region.toUpperCase()}</span>${pill}</div>
+          <div class="event-meta" style="margin-top:4px">
+            <span class="meta-item"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C5.24 0 3 2.24 3 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>${ev.location}</span>
+            <span class="meta-item"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 1a1 1 0 00-1 1v1H3a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2h-1V2a1 1 0 10-2 0v1H6V2a1 1 0 00-1-1zm-2 5h10v7H3V6z"/></svg>${formatDate(ev.start)}${end}</span>
+            <span class="meta-item">${icon} ${ev.mode}</span>
+            <span class="meta-item" style="color:#9ca3af">${ev.org}</span>
+            ${ev.url ? `<a href="${ev.url}" target="_blank" rel="noopener" class="event-link">Ver site ↗</a>` : ''}
+          </div>
+          <div class="event-desc">${ev.desc}</div>
+          <div class="event-actions">
+            <button class="btn-cal" onclick="addToCalendar(${ev.id})">📅 Ao calendário</button>
+            <button class="btn-star ${isFav?'active':''}" id="star-${ev.id}" onclick="toggleFav(${ev.id})">${isFav?'⭐ Participando':'☆ Participar'}</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('eventsContainer').innerHTML=html;
+}
+
+function initApp(){
+  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('typeFilters').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-type]');if(!btn)return;
+    activeType=btn.dataset.type;
+    document.querySelectorAll('[data-type]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');render();
+  });
+  document.getElementById('regionFilters').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-region]');if(!btn)return;
+    activeRegion=btn.dataset.region;
+    document.querySelectorAll('[data-region]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');render();
+  });
+  document.getElementById('togglePast').addEventListener('click',()=>{
+    showPast=!showPast;
+    const btn=document.getElementById('togglePast');
+    btn.classList.toggle('active',showPast);
+    btn.textContent=showPast?'Ocultar passados':'Mostrar passados';
+    render();
+  });
+  document.getElementById('toggleFav').addEventListener('click',()=>{
+    showFavOnly=!showFavOnly;
+    const btn=document.getElementById('toggleFav');
+    btn.classList.toggle('active',showFavOnly);
+    btn.textContent=showFavOnly?'⭐ Meus eventos':'☆ Meus eventos';
+    render();
+  });
+  render();
+}
+if(sessionStorage.getItem(SK)){initApp();}
+</script>
+</body>
+</html>
